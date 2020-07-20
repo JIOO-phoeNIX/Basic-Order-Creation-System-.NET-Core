@@ -1,0 +1,151 @@
+﻿
+@{
+    ViewData["Title"] = "Add Items to the order";
+}
+
+<h1>Add Items</h1>
+
+<h5>Sales Order: @ViewData["orderId"]</h5>
+<p style="font-size:larger">
+    NOTE: The Item Rate that is sent to the sales order item table after choosing the Item from the Dropdownlist
+    is set to a static value of "2000", due to the fact that the sales order Item table is storing the Item Id
+    along side the Item Rate, which makes two dependent values needed from the Dropdownlist.
+
+</p>
+<br />
+<br />
+
+<div class="form-horizontal">
+
+    <div class="form-group">
+        <div class="col-md-5">
+            Item: <select id="itemsList" class="form-control"></select>
+        </div>
+    </div>
+
+    <br />
+    <div class="form-group">
+        <div class="col-md-5">
+            <input type="submit" value="Add item" class="btn btn-primary" id="addBtn" />
+        </div>
+    </div>
+
+    <p style="font-size:larger; color:red" id="errormsg"></p>
+    <p style="font-size:larger" id="responsetxt"></p>
+</div>
+
+<br />
+
+<h5>Added Items</h5>
+<br />
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>
+                Item Name
+            </th>
+            <th>
+                Rate
+            </th>
+        </tr>
+    </thead>
+
+    <tbody id="Table">
+    </tbody>
+</table>
+
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+         if (sessionStorage.getItem('accessToken') == null) {
+            window.location.href = "@Url.Action("Login", "Home")";
+        }
+        Manager.GetAllCustomer();
+
+        $('#addBtn').click(function () {
+            var selectedItemId = $('#itemsList').val();
+            if (selectedItemId == -1) {
+                $('#errormsg').text("Please select an item");
+            }
+            else
+            {
+                $.ajax({
+                    method: "POST",
+                    accepts: "json",
+                    headers: {
+                        'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                    },
+                    contentType: "application/json",
+                    url: "https://localhost:44338/api/Salesorder/@ViewData["orderId"]/Item",
+                    data: JSON.stringify({
+                        SORDID: @ViewData["orderId"],
+                        ITEMID: selectedItemId,
+                        ITEMRATE: 2000, //The value is static, because the Sales Order table stores the Item Rate which is not suppose to be
+                        DATAEXST: "EXT"
+                    }),
+                    success: function (data) {
+                        $.ajax({
+                            method: "GET",
+                            headers: {
+                                'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                            },
+                            url: "https://localhost:44338/api/Salesorder/@ViewData["orderId"]/Item",
+                            accepts: "json",
+                            success: function (resData) {
+                                $('#Table').empty();
+                                $.each(resData, function (index, val) {
+                                    var rows = "<tr>" +
+                                        "<td id = 'Name'>" + val.itemName + "</td>" +
+                                        "<td id = 'Rate'>" + val.rate + "</td>" +
+                                        "</tr>";
+                                    $('#Table').append(rows);
+                                })
+                            }
+                        });
+                    },
+                    error: Manager.onFailed
+                });
+            }
+        });
+    })
+
+    var Manager = {
+        GetAllCustomer: function () {
+            var obj = "";
+            var serviceUrl = "https://localhost:44338/api/item";
+            window.Manager.GetApi(serviceUrl, onSuccess, onFailed);
+            var drpList = $('#itemsList');
+
+            function onSuccess(jsonData) {
+                drpList.append($('<option/>', { value: -1, text: 'Select Item' }));
+                obj = jsonData;
+                $.each(jsonData, function (index, val) {
+                    drpList.append($('<option/>', { value: val.itemid, text: val.itemname }));
+                });
+            }
+
+            function onFailed(error) {
+               if (error.status == 401) {
+                    window.location.href = "@Url.Action("Login", "Home")";
+                }
+                window.alert(error.status);
+            }
+
+            return obj;
+        },
+
+        GetApi: function (serviceUrl, successCallback, errorCallback) {
+            $.ajax({
+                type: "GET",
+                url: serviceUrl,
+                headers: {
+                    'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                },
+                dataType: "json",
+                success: successCallback,
+                error: errorCallback
+            });
+        },
+    }
+</script>

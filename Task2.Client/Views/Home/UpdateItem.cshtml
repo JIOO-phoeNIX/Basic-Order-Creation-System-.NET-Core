@@ -1,0 +1,179 @@
+﻿
+@{
+    ViewData["Title"] = "Update Item";
+}
+
+<h1 id="ItemDisplay"></h1>
+
+<div class="form-horizontal">
+    <hr />
+
+
+    <div class="form-group">
+
+
+        <div class="col-md-10">
+            Item Name <p id="itemName"></p>
+        </div>
+    </div>
+
+    <div class="form-group">
+
+        <div class="col-md-10">
+            Item Rate <input type="number" id="itemRate" class="form-control" />
+        </div>
+    </div>
+
+
+    <div class="form-group">
+        <div class="col-md-10">
+            <input type="submit" value="Update" class="btn btn-primary" id="submitButton" />
+
+            <input type="submit" value="Delete" class="btn btn-danger" id="deleteButton" />
+        </div>
+    </div>
+    <p style="font-size:larger; color:red" id="errormsg"></p>
+    <p id="txtItemRate" hidden="hidden"></p>
+    <p id="txtCurrentTotal" hidden="hidden"></p>
+</div>
+
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+         if (sessionStorage.getItem('accessToken') == null) {
+            window.location.href = "@Url.Action("Login", "Home")";
+         }
+        Manager.GetAllEXTSalesOrder();
+        var currentItemRate = "";
+        var currentTotalRate = "";
+
+        $('#deleteButton').click(function () {
+            var choice = confirm("Are you sure you want to delete this item?");
+
+            if (choice == true) {
+                var pathUrl = "https://localhost:44338/api/Salesorder/@ViewData["orderId"]/Item/@ViewData["itemId"]";
+                $.ajax({
+                    method: "PATCH",
+                    url: pathUrl,
+                    headers: {
+                        'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                    },
+                    dataType: "json",
+                    success: patchSuccess,
+                    error: Manager.onFailed
+                });
+                window.location.href = "@Url.Action("OrderDetails", "Home")?orderId=@ViewData["orderId"]";
+            }
+
+
+            function patchSuccess(data) {
+                if (data == "Item deleted successfully") {
+                    window.location.href = "@Url.Action("OrderDetails", "Home")?orderId=@ViewData["orderId"]";
+                }
+                else
+                {
+                    $('#errormsg').text(data);
+                }
+            }
+        });
+
+        $('#submitButton').click(function () {
+            var newPrice = $('#itemRate').val();
+            var temp = "";
+            var newTotalRate = "";
+
+            if (newPrice <= 0) {
+                $('#errormsg').text("Rate must not be less then or equal to 0");
+            }
+            else
+            {
+                currentItemRate = parseInt($('#txtItemRate').text());
+                currentTotalRate = parseInt($('#txtCurrentTotal').text());
+                if (newPrice > currentItemRate) {
+                    temp = newPrice - currentItemRate;
+                    newTotalRate = currentTotalRate + temp;
+                }
+                else
+                {
+                    temp = currentItemRate - newPrice;
+                    newTotalRate = currentTotalRate - temp;
+                }
+
+                $.ajax({
+                    method: "PUT",
+                    accepts: "json",
+                    headers: {
+                        'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                    },
+                    contentType: "application/json",
+                    url: "https://localhost:44338/api/Salesorder/@ViewData["orderId"]/Item/@ViewData["itemId"]",
+                    data: JSON.stringify( {
+                        NewTotalPrice: newTotalRate,
+                        NewItemPrice: newPrice,
+                        SOrdId: @ViewData["orderId"],
+                        ItemId: @ViewData["itemId"]
+                    }),
+                    success: updateSuccess,
+                    error: Manager.onFailed
+                });
+            }
+
+
+        });
+
+        function updateSuccess(response) {
+            if (response == "Updated successfully") {
+                window.location.href = "@Url.Action("OrderDetails", "Home")?orderId=@ViewData["orderId"]";
+            }
+            else
+            {
+                $('#errormsg').text(response);
+            }
+        }
+    })
+
+    var Manager = {
+        GetAllEXTSalesOrder: function () {
+            var obj = "";
+
+            var endpoint = "https://localhost:44338/api/Salesorder/@ViewData["orderId"]/Item/@ViewData["itemId"]";
+
+            window.Manager.GetApiItems(endpoint, onDataSuccess, onFailed);
+
+            function onFailed(error) {
+                if (error.status == 401) {
+                    window.location.href = "@Url.Action("Login", "Home")";
+                }
+                window.alert(error.status);
+            }
+
+            function onDataSuccess(jsonData) {
+                 obj = jsonData;
+                $('#ItemDisplay').text("Update " + obj[0].itemName);
+                $('#itemName').text(obj[0].itemName);
+                $('#itemRate').val(obj[0].rate);
+                currentItemRate = obj[0].rate;
+                currentTotalRate = obj[0].totalRate;
+                $('#txtItemRate').text(obj[0].rate);
+                $('#txtCurrentTotal').text(obj[0].totalRate);
+            }
+
+            return obj;
+        },
+
+        GetApiItems: function (endpoint, successFunc, errorFunc) {
+            $.ajax({
+                type: "GET",
+                url: endpoint,
+                headers: {
+                    'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                },
+                dataType: "json",
+                success: successFunc,
+                error: errorFunc
+            });
+        }
+    }
+</script>
+

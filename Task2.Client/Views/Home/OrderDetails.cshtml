@@ -1,0 +1,128 @@
+﻿
+@{
+    ViewData["Title"] = "Order Details";
+}
+
+<div class="text-center">
+    <h2 class="display-4" id="Name"></h2>
+    <h5 id="ordId"></h5>
+    <h5 id="ordDate"></h5>
+    <input type="submit" id="delBtn" class="btn btn-danger" value="Delete" />
+    <p id="errormsg" style="font-size:larger; color:red"></p>
+    <br /><br />
+</div>
+
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>
+                SL
+            </th>
+            <th>
+                Item
+            </th>
+            <th>
+                Rate
+            </th>
+            <th>
+                Action
+            </th>
+        </tr>
+    </thead>
+
+    <tbody id="Table">
+    </tbody>
+</table>
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        if (sessionStorage.getItem('accessToken') == null) {
+            window.location.href = "@Url.Action("Login", "Home")";
+        }
+        Manager.GetAllEXTSalesOrder();
+    })
+
+    $('#delBtn').click(function () {
+        var choice = confirm("Are you sure you want to delete your order?");
+        if (choice == true) {
+            var pathUrl = "https://localhost:44338/api/Salesorder/@ViewData["Id"]";
+            $.ajax({
+                method: "PATCH",
+                headers: {
+                    'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                },
+                url: pathUrl,
+                dataType: "json",
+                success: patchSuccess,
+                error: Manager.onFailed
+            });
+            window.location.href = "@Url.Action("Index", "Home")";
+        }
+
+        function patchSuccess(data) {
+            if (data == "Item deleted successfully") {
+                window.location.href = "@Url.Action("Index", "Home")";
+            }
+            else
+            {
+                $('#errormsg').text(data);
+            }
+        }
+    });
+
+    var Manager = {
+        GetAllEXTSalesOrder: function () {
+            var obj = "";
+
+            var endpoint = "https://localhost:44338/api/Salesorder/@ViewData["Id"]/Item";
+
+            window.Manager.GetApiItems(endpoint, onDataSuccess, onFailed);
+
+            function onFailed(error) {
+               if (error.status == 401) {
+                    window.location.href = "@Url.Action("Login", "Home")";
+                }
+                window.alert(error.status);
+            }
+
+            function onDataSuccess(jsonData) {
+                 obj = jsonData;
+                $.each(jsonData, function (index, val) {
+                    var count = 1;
+                    var rows = "<tr>" +
+                        "<td id = 'Id'>" + count + "</a></td>" +
+                        "<td id = 'Name'>" + val.itemName + "</td>" +
+                        "<td id = 'Date'>" + val.rate + "</td>" +
+
+                        "<td id = 'Id'>" + "<a href='@Url.Action("UpdateItem", "Home")?orderId=" + @ViewData["Id"] + "&itemId="+ val.itemId + "'>" + "Edit Item" + "</a></td>" +
+
+                        "</tr>";
+                    count = count + 1;
+                    $('#Table').append(rows);
+                });
+
+                $('#Name').text("Welcome " + obj[0].custName);
+                $('#ordId').text("Sales Order: " + @ViewData["Id"]);
+                $('#ordDate').text("Order Date: " + obj[0].ordDate);
+            }
+            return obj;
+        },
+
+
+        GetApiItems: function (endpoint, successFunc, errorFunc) {
+            $.ajax({
+                type: "GET",
+                url: endpoint,
+                headers: {
+                    'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                },
+                dataType: "json",
+                success: successFunc,
+                error: errorFunc
+            });
+        }
+    }
+</script>
+

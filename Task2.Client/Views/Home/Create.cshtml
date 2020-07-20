@@ -1,0 +1,115 @@
+﻿
+@{
+    ViewData["Title"] = "Order Create";
+}
+
+<h1>Create A New Order</h1>
+
+<br />
+<br />
+
+<div class="form-horizontal">
+
+    <div class="form-group">
+        <div class="col-md-5">
+            Customer Name <select id="custList" class="form-control"></select>
+        </div>
+    </div>
+
+    <br />
+    <div class="form-group">
+        <div class="col-md-5">
+            Order Date <input type="datetime-local" id="ordDate" class="form-control" />
+        </div>
+    </div>
+
+    <br /><br />
+    <div class="form-group">
+        <div class="col-md-5">
+            <input type="submit" value="Create" class="btn btn-primary" id="createBtn" />
+        </div>
+    </div>
+
+    <p style="font-size:larger; color:red" id="errormsg"></p>
+    <p style="font-size:larger" id="responsetxt"></p>
+</div>
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        if (sessionStorage.getItem('accessToken') == null) {
+            window.location.href = "@Url.Action("Login", "Home")";
+        }
+        Manager.GetAllCustomer();
+
+        $('#createBtn').click(function () {
+            var selectedCustId = $('#custList').val();
+            var selectedDate = $('#ordDate').val();
+
+            if (selectedCustId == -1 || (selectedDate == "")) {
+                $('#errormsg').text("Please select all fields");
+            }
+            else
+            {
+                $.ajax({
+                    method: "POST",
+                    accepts: "json",
+                    headers: {
+                        'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                    },
+                    contentType: "application/json",
+                    url: "https://localhost:44338/api/Salesorder",
+                    data: JSON.stringify({
+                        SORDDATE: selectedDate,
+                        CUSTID: selectedCustId,
+                        SORDAMNT: 0,
+                        DATAEXST: "EXT"
+                    }),
+                    success: function (data) {
+                        window.location.href = "@Url.Action("AddItems", "Home")?orderId=" + data.sordid;
+                    },
+                    error: Manager.onFailed
+                });
+            }
+        });
+    })
+
+    var Manager = {
+        GetAllCustomer: function () {
+            var obj = "";
+            var serviceUrl = "https://localhost:44338/api/Customer";
+            window.Manager.GetApi(serviceUrl, onSuccess, onFailed);
+            var custDrpList = $('#custList');
+            debugger;
+            function onSuccess(jsonData) {
+                custDrpList.append($('<option/>', { value: -1, text: 'Select Customer' }));
+                obj = jsonData;
+                $.each(jsonData, function (index, val) {
+                    custDrpList.append($('<option/>', { value: val.custid, text: val.custname }));
+                });
+            }
+
+            function onFailed(error) {
+                if (error.status == 401) {
+                    window.location.href = "@Url.Action("Login", "Home")";
+                }
+            }
+
+            return obj;
+        },
+
+        GetApi: function (serviceUrl, successCallback, errorCallback) {
+            $.ajax({
+                type: "GET",
+                url: serviceUrl,
+                headers: {
+                    'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                },
+                dataType: "json",
+                success: successCallback,
+                error: errorCallback
+            });
+        },
+    }
+</script>
+

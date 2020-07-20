@@ -1,0 +1,85 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+</div>
+
+<h4>@Html.ActionLink("Create an Order", "Create")</h4>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>
+                Sales Order
+            </th>
+            <th>
+                Customer
+            </th>
+            <th>
+                Order Date
+            </th>
+            <th>
+                Amount
+            </th>            
+        </tr>
+    </thead>
+
+    <tbody id="Table">
+    </tbody>
+</table>
+
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        var accessToken = sessionStorage.getItem('accessToken');
+        if (accessToken == null) {
+            window.location.href = "@Url.Action("Login", "Home")";
+        }
+        Manager.GetAllEXTSalesOrder();
+    })
+
+    var Manager = {
+        GetAllEXTSalesOrder: function () {
+            var obj = "";
+            var serviceUrl = "https://localhost:44338/api/Salesorder/";
+            window.Manager.GetApi(serviceUrl, onSuccess, onFailed);
+
+            function onSuccess(jsonData) {
+                obj = jsonData;
+                $.each(jsonData, function (index, val) {
+                    var rows = "<tr>" +
+                        "<td id = 'Id'>" + "<a href='@Url.Action("OrderDetails", "Home")?orderId=" + val.salesOrderId + "'>" + val.salesOrderId + "</a></td>" +
+                        "<td id = 'Name'>" + val.customerName + "</td>" +
+                        "<td id = 'Date'>" + val.salesOrderDate + "</td>" +
+                        "<td id = 'Amount'>" + val.salesOrderAmount + "</td>" +
+
+                        "</tr>";
+                    $('#Table').append(rows);
+                });
+            }
+
+            function onFailed(error) {
+                if (error.status == 401) {
+                    window.location.href = "@Url.Action("Login", "Home")";
+                }
+                window.alert(error.status);
+            }
+            return obj;
+        },
+
+        GetApi: function (serviceUrl, successCallback, errorCallback) {
+            $.ajax({
+                type: "GET",
+                url: serviceUrl,
+                headers: {
+                    'Authorization': 'Bearer ' + sessionStorage.getItem('accessToken')
+                },
+                dataType: "json",
+                success: successCallback,
+                error: errorCallback
+            });
+        },
+    }
+</script>
