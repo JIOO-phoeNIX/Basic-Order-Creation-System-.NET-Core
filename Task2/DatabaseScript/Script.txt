@@ -1,0 +1,69 @@
+﻿USE [Task2]
+GO
+/****** Object:  Table [dbo].[TABCUST]    Script Date: 7/20/2020 2:47:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TABCUST](
+	[CUSTID] [numeric](3, 0) IDENTITY(1,1) NOT NULL,
+	[CUSTNAME] [nvarchar](20) NOT NULL
+) ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[TABITEM]    Script Date: 7/20/2020 2:47:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TABITEM](
+	[ITEMID] [numeric](3, 0) IDENTITY(1,1) NOT NULL,
+	[ITEMNAME] [nvarchar](20) NOT NULL,
+	[ITEMRATE] [numeric](10, 2) NOT NULL
+) ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[TABSODATA]    Script Date: 7/20/2020 2:47:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TABSODATA](
+	[SODATAID] [numeric](3, 0) IDENTITY(1,1) NOT NULL,
+	[SORDID] [numeric](3, 0) NOT NULL,
+	[ITEMID] [numeric](3, 0) NOT NULL,
+	[ITEMRATE] [numeric](10, 2) NOT NULL,
+	[DATAEXST] [nvarchar](3) NOT NULL
+) ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[TABSORDER]    Script Date: 7/20/2020 2:47:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TABSORDER](
+	[SORDID] [numeric](3, 0) IDENTITY(1,1) NOT NULL,
+	[SORDDATE] [datetime] NOT NULL,
+	[CUSTID] [numeric](3, 0) NOT NULL,
+	[SORDAMNT] [numeric](10, 2) NOT NULL,
+	[DATAEXST] [nvarchar](3) NOT NULL
+) ON [PRIMARY]
+
+GO
+/****** Object:  Table [dbo].[User]    Script Date: 7/20/2020 2:47:16 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[User](
+	[UserId] [numeric](3, 0) IDENTITY(1,1) NOT NULL,
+	[Username] [nvarchar](50) NOT NULL,
+	[Password] [nvarchar](50) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[UserId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
